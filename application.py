@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 import xmltodict
 import pandas as pd
-from pandas.io.json import json_normalize
+from pandas import json_normalize
 import config
 import utils
 
@@ -13,12 +13,14 @@ logger_name = 'data_assessment_etl_logger'
 logger = utils.establish_logger(logger_name=logger_name)
 
 
-if __name__ == "__main__":
+def parse_xml(xml_file):
     """
-        Starting point of the program
+        Parse nested xml file and build a dataframe
+    :param xml_file: input xml file
+    :return: parsed dataframe
     """
     try:
-        with open("GL_AK_2020-11-24.xml") as xml_file:
+        with open(xml_file) as xml_file:
             data_dict = xmltodict.parse(xml_file.read())
         xml_file.close()
         header = data_dict['Ledger']['Header']
@@ -43,6 +45,18 @@ if __name__ == "__main__":
             df = pd.concat([df, pd.merge(df1, temp, on='merge_id')])
             df.insert(0, 'CompanyCode', header['CompanyCode'])
             df.insert(1, 'AccountingDate', header['AccountingDate'])
-            print(df)
+            return df
+    except Exception as e:
+        logger.exception("exception", extra={'exp_msg': e})
+
+
+if __name__ == "__main__":
+    """
+        Starting point of the program
+    """
+    try:
+        file_name = 'GL_AK_2020-11-24.xml'
+        df = parse_xml(file_name)
+        print(df)
     except Exception as e:
         logger.exception("exception", extra={'exp_msg': e})
